@@ -1,19 +1,21 @@
 Attribute VB_Name = "LSEG_code"
 Option Explicit
 
+'File names and path location
 Const INPUT_LOG_PATH = "C:\Users\junis\OneDrive\Documents\Job Search\LSEG - code test\"
 Const INPUT_LOG_FILE = "logs.log"
 Const OUTPUT_LOG_FILE = "output.log"
 
-Const HANDLED_ERROR As Long = 65535
+'Variables to set thresholds for WARNINGs and ERRORs
+Const WARNING_THRESHOLD As Date = "00:05"
+Const ERROR_THRESHOLD As Date = "00:10"
 
+
+'Constants for locations of data in the in input CSV file
 Const TIMESTAMP As Byte = 0
 Const TASK As Byte = 1
 Const ACTIONNAME As Byte = 2
 Const ID As Byte = 3
-
-Const WARNING_THRESHOLD As Date = "00:05"
-Const ERROR_THRESHOLD As Date = "00:10"
 
 Sub Test_App()
     Call Parse_Log_File(INPUT_LOG_PATH, INPUT_LOG_FILE, OUTPUT_LOG_FILE)
@@ -34,33 +36,32 @@ Dim bNewObj         As Boolean
 Dim oFileSystem     As Object
 Dim oFile           As Object
 
+'Open the input file for reading
 FileNum = FreeFile()
 Open szPath & szInputFile For Input As #FileNum
 
-' The example file reads in as a single file, not line by line, so workaround is to load the whole file into an array
+'The file given reads the whole file in a single entry not line by line, so workaround is to load the whole file into an array
 Line Input #FileNum, DataLine
 szLines = Split(DataLine, Chr$(10))
 Set Log_Entries = New Collection
 
 'Process each line of the file, adding that data to the Log_Entries collection
 For Each vLine In szLines
-    'Stop
     If vLine <> "" Then                                                                     'Check we have a line with data
         vValues = Split(vLine, ",")                                                             'Parse the line into constituent parts
         Set Log_Entry = GetLogEntryObject(vValues(TASK), Log_Entries, bNewObj)                  'Call function to either return correct obeject or create new one
         If Trim(vValues(ACTIONNAME)) = "START" Then Log_Entry.StartTime = vValues(TIMESTAMP)    'Add the start time, if that was the data
         If Trim(vValues(ACTIONNAME)) = "END" Then Log_Entry.EndTime = vValues(TIMESTAMP)        'Add the end time, if that was the data
-        Log_Entry.ID = vValues(ID)
-        If bNewObj Then Log_Entries.Add Log_Entry
+        Log_Entry.ID = vValues(ID)                                                              'Add the ID of the process
+        If bNewObj Then Log_Entries.Add Log_Entry                                               'Only add this object to the collection, if it is actually new
     End If
 Next vLine
-Stop
 
 'Write out the results to an output file
 Set oFileSystem = CreateObject("Scripting.FileSystemObject")
 Set oFile = oFileSystem.CreateTextFile(szPath & szOutputFile)
 
-'Write out the ERRORs
+'Write out the ERRORs at the begining of the output file
 For Each Log_Entry In Log_Entries
     If Log_Entry.ProcessTime = -1 Then
         oFile.WriteLine Log_Entry.TaskName & " ERROR"
@@ -69,7 +70,7 @@ For Each Log_Entry In Log_Entries
     End If
 Next Log_Entry
 
-'Write out the WARNINGs
+'Write out the WARNINGs next
 For Each Log_Entry In Log_Entries
     If Log_Entry.ProcessTime = -1 Then
         'Do Nothing
@@ -80,9 +81,8 @@ For Each Log_Entry In Log_Entries
     End If
 Next Log_Entry
 
-
+'Close the file and clear the objects
 oFile.Close
-
 Set oFileSystem = Nothing
 Set oFile = Nothing
 
@@ -99,7 +99,7 @@ Function GetLogEntryObject(ByVal szLogName As String, Log_Entries As Collection,
         End If
     Next objLogEntry
     NewObj = True                                   'If we checked the whole 'Log_Entries' collection and did not find this object, then create a new one and pass it back
-    Set objLogEntry = New Log_Entry
-    objLogEntry.TaskName = szLogName
-    Set GetLogEntryObject = objLogEntry
+    Set objLogEntry = New Log_Entry                 'Create a new object
+    objLogEntry.TaskName = szLogName                'Add the name of the process
+    Set GetLogEntryObject = objLogEntry             'Return this object in this function
 End Function
