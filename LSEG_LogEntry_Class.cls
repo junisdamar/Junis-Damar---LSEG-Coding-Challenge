@@ -12,6 +12,7 @@ Public EndTime      As Date
 Public TaskName     As String
 Public ID           As Long
 
+'Calculate the ProcessTime, but pass back -1 if either data is missing
 Property Get ProcessTime() As Date
     If EndTime > 0 And StartTime > 0 Then
         ProcessTime = EndTime - StartTime
