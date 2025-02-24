@@ -44,7 +44,10 @@ End Sub
 
 'Test function that uses explict file to validate processes
 Function Test_File_Read() As Boolean
+    
     Dim Log_Entries As Collection
+    
+    'Call the main function and print the results
     Set Log_Entries = Parse_Log_File(INPUT_LOG_PATH, INPUT_LOG_FILE_TEST)
     Debug.Print "TEST NO PROBLEM name", Log_Entries(1).TaskName = "TEST NO PROBLEM"
     Debug.Print "TEST WARNING name", Log_Entries(2).TaskName = "TEST WARNING"
@@ -52,8 +55,18 @@ Function Test_File_Read() As Boolean
     Debug.Print "TEST ERROR name", Log_Entries(3).TaskName = "TEST ERROR"
     Debug.Print "TEST ERROR time", Log_Entries(3).ProcessTime > ERROR_THRESHOLD
     Debug.Print "TEST NO END name", Log_Entries(4).TaskName = "TEST NO END"
+    
+    'Cause an error if unexpected data
     If Not Log_Entries(2).ProcessTime > WARNING_THRESHOLD Then Exit Function
     If Not Log_Entries(3).ProcessTime > ERROR_THRESHOLD Then Exit Function
+    If Not Log_Entries(1).TaskName = "TEST NO PROBLEM" Then Exit Function
+    If Not Log_Entries(2).TaskName = "TEST WARNING" Then Exit Function
+    If Not Log_Entries(2).ProcessTime > WARNING_THRESHOLD Then Exit Function
+    If Not Log_Entries(3).TaskName = "TEST ERROR" Then Exit Function
+    If Not Log_Entries(3).ProcessTime > ERROR_THRESHOLD Then Exit Function
+    If Not Log_Entries(4).TaskName = "TEST NO END" Then Exit Function
+    
+    'Exit function as a success
     Test_File_Read = True
 End Function
 
